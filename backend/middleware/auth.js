@@ -6,7 +6,6 @@ const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
 const { UnauthorizedError } = require("../expressError");
 
-
 /** Middleware: Authenticate user.
  *
  * If a token was provided, verify it, and, if valid, store the token payload
@@ -20,7 +19,14 @@ function authenticateJWT(req, res, next) {
     const authHeader = req.headers && req.headers.authorization;
     if (authHeader) {
       const token = authHeader.replace(/^[Bb]earer /, "").trim();
-      res.locals.user = jwt.verify(token, SECRET_KEY);
+      try {
+        // Verify the token; if valid, attach the user payload to res.locals
+        res.locals.user = jwt.verify(token, SECRET_KEY);
+      } catch (error) {
+        // If token verification fails, proceed without throwing an error
+        // This allows for routes that are accessible both with and without authentication
+        console.error("JWT verification failed:", error);
+      }
     }
     return next();
   } catch (err) {
@@ -42,12 +48,10 @@ function ensureLoggedIn(req, res, next) {
   }
 }
 
-
-/** Middleware to use when they be logged in as an admin user.
+/** Middleware to use when they must be an admin.
  *
- *  If not, raises Unauthorized.
+ * If not, raises Unauthorized.
  */
-
 function ensureAdmin(req, res, next) {
   try {
     if (!res.locals.user || !res.locals.user.isAdmin) {
@@ -59,28 +63,8 @@ function ensureAdmin(req, res, next) {
   }
 }
 
-/** Middleware to use when they must provide a valid token & be user matching
- *  username provided as route param.
- *
- *  If not, raises Unauthorized.
- */
-
-function ensureCorrectUserOrAdmin(req, res, next) {
-  try {
-    const user = res.locals.user;
-    if (!(user && (user.isAdmin || user.username === req.params.username))) {
-      throw new UnauthorizedError();
-    }
-    return next();
-  } catch (err) {
-    return next(err);
-  }
-}
-
-
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
-  ensureAdmin,
-  ensureCorrectUserOrAdmin,
+  ensureAdmin
 };

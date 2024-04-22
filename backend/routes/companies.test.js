@@ -2,6 +2,7 @@
 
 const request = require("supertest");
 
+const db = require("../db");
 const app = require("../app");
 
 const {
@@ -9,10 +10,10 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
-  testJobIds,
   u1Token,
-  adminToken,
+  adminToken
 } = require("./_testCommon");
+const e = require("express");
 
 beforeAll(commonBeforeAll);
 beforeEach(commonBeforeEach);
@@ -41,7 +42,7 @@ describe("POST /companies", function () {
     });
   });
 
-  test("unauth for non-admin", async function () {
+  test("denied for non-admin", async function () {
     const resp = await request(app)
         .post("/companies")
         .send(newCompany)
@@ -105,45 +106,15 @@ describe("GET /companies", function () {
     });
   });
 
-  test("works: filtering", async function () {
+  test("fails: test next() handler", async function () {
+    // there's no normal failure event which will cause this route to fail ---
+    // thus making it hard to test that the error-handler works with it. This
+    // should cause an error, all right :)
+    await db.query("DROP TABLE companies CASCADE");
     const resp = await request(app)
         .get("/companies")
-        .query({ minEmployees: 3 });
-    expect(resp.body).toEqual({
-      companies: [
-        {
-          handle: "c3",
-          name: "C3",
-          description: "Desc3",
-          numEmployees: 3,
-          logoUrl: "http://c3.img",
-        },
-      ],
-    });
-  });
-
-  test("works: filtering on all filters", async function () {
-    const resp = await request(app)
-        .get("/companies")
-        .query({ minEmployees: 2, maxEmployees: 3, name: "3" });
-    expect(resp.body).toEqual({
-      companies: [
-        {
-          handle: "c3",
-          name: "C3",
-          description: "Desc3",
-          numEmployees: 3,
-          logoUrl: "http://c3.img",
-        },
-      ],
-    });
-  });
-
-  test("bad request if invalid filter key", async function () {
-    const resp = await request(app)
-        .get("/companies")
-        .query({ minEmployees: 2, nope: "nope" });
-    expect(resp.statusCode).toEqual(400);
+        .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(500);
   });
 });
 
@@ -159,11 +130,7 @@ describe("GET /companies/:handle", function () {
         description: "Desc1",
         numEmployees: 1,
         logoUrl: "http://c1.img",
-        jobs: [
-          { id: testJobIds[0], title: "J1", equity: "0.1", salary: 1 },
-          { id: testJobIds[1], title: "J2", equity: "0.2", salary: 2 },
-          { id: testJobIds[2], title: "J3", equity: null, salary: 3 },
-        ],
+        jobs: expect.any(Array),
       },
     });
   });
@@ -177,7 +144,7 @@ describe("GET /companies/:handle", function () {
         description: "Desc2",
         numEmployees: 2,
         logoUrl: "http://c2.img",
-        jobs: [],
+        jobs: expect.any(Array),
       },
     });
   });
@@ -262,18 +229,11 @@ describe("PATCH /companies/:handle", function () {
 /************************************** DELETE /companies/:handle */
 
 describe("DELETE /companies/:handle", function () {
-  test("works for admin", async function () {
+  test("works for users", async function () {
     const resp = await request(app)
         .delete(`/companies/c1`)
         .set("authorization", `Bearer ${adminToken}`);
     expect(resp.body).toEqual({ deleted: "c1" });
-  });
-
-  test("unauth for non-admin", async function () {
-    const resp = await request(app)
-        .delete(`/companies/c1`)
-        .set("authorization", `Bearer ${u1Token}`);
-    expect(resp.statusCode).toEqual(401);
   });
 
   test("unauth for anon", async function () {

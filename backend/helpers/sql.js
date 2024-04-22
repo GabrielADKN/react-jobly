@@ -1,31 +1,46 @@
 const { BadRequestError } = require("../expressError");
 
 /**
- * Helper for making selective update queries.
+ * Generates a SQL update statement for partially updating an entity's properties.
  *
- * The calling function can use it to make the SET clause of an SQL UPDATE
- * statement.
+ * This function dynamically constructs a part of an SQL UPDATE statement to update only the specified fields of a database record.
  *
- * @param dataToUpdate {Object} {field1: newVal, field2: newVal, ...}
- * @param jsToSql {Object} maps js-style data fields to database column names,
- *   like { firstName: "first_name", age: "age" }
+ * Parameters:
+ * - dataToUpdate (Object): An object containing the fields to update, with keys as the property names and values as the new values for these properties.
+ * - jsToSql (Object): An optional mapping object to translate JavaScript camelCase property names to SQL snake_case column names. If a property name does not exist in the mapping, it will be used as is.
  *
- * @returns {Object} {sqlSetCols, dataToUpdate}
+ * Returns:
+ * An object with two keys:
+ * - setCols (String): A string formatted for the SET clause of an SQL UPDATE statement, containing placeholders (e.g., $1, $2) for parameterized query values.
+ * - values (Array): An array of values corresponding to the placeholders in the setCols string. These are the new values to be set in the database.
  *
- * @example {firstName: 'Aliya', age: 32} =>
- *   { setCols: '"first_name"=$1, "age"=$2',
- *     values: ['Aliya', 32] }
+ * Throws:
+ * - BadRequestError: If `dataToUpdate` is empty, indicating there are no fields provided for the update.
+ *
+ * Example:
+ * const dataToUpdate = { firstName: 'Aliya', age: 32 };
+ * const jsToSql = { firstName: 'first_name' };
+ * sqlForPartialUpdate(dataToUpdate, jsToSql);
+ *
+ * Returns:
+ * {
+ *    setCols: '"first_name"=$1, "age"=$2',
+ *    values: ['Aliya', 32]
+ * }
+ *
  */
 
 function sqlForPartialUpdate(dataToUpdate, jsToSql) {
+  // Check if dataToUpdate is empty
   const keys = Object.keys(dataToUpdate);
   if (keys.length === 0) throw new BadRequestError("No data");
 
-  // {firstName: 'Aliya', age: 32} => ['"first_name"=$1', '"age"=$2']
-  const cols = keys.map((colName, idx) =>
-      `"${jsToSql[colName] || colName}"=$${idx + 1}`,
+  // Convert JavaScript property names to SQL column names based on jsToSql mapping and prepare them for parameterized query.
+  const cols = keys.map(
+    (colName, idx) => `"${jsToSql[colName] || colName}"=$${idx + 1}`
   );
 
+  // Return an object with setCols and values
   return {
     setCols: cols.join(", "),
     values: Object.values(dataToUpdate),
