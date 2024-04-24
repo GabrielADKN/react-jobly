@@ -177,6 +177,24 @@ class Company {
 
     if (!company) throw new NotFoundError(`No company: ${handle}`);
   }
+
+  /** get jobs by company
+   *
+   * Returns { handle, name, description, numEmployees, logoUrl, jobs }
+   *   where jobs is [{ id, title, salary, equity }, ...]
+   *
+   * Throws NotFoundError if not found.
+   **/
+  static async getJobsByCompany(handle) {
+    const jobsRes = await db.query(
+        `SELECT id, title, salary, equity
+         FROM jobs
+         WHERE company_handle = $1
+         ORDER BY id`,
+      [handle]
+    );
+    return jobsRes.rows;
+  }
 }
 
 

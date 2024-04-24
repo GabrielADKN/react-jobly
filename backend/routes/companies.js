@@ -113,6 +113,17 @@ router.patch("/:handle", authenticateJWT, ensureAdmin, async function (req, res,
   }
 });
 
+/** GET jobs by company handle */
+
+router.get("/:handle/jobs", async function (req, res, next) {
+  try {
+    const jobs = await Company.getJobsByCompany(req.params.handle);
+    return res.json({ jobs });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 /** DELETE /[handle]  =>  { deleted: handle }
  *
  * Authorization: login
@@ -126,6 +137,5 @@ router.delete("/:handle", authenticateJWT, ensureAdmin, async function (req, res
     return next(err);
   }
 });
-
 
 module.exports = router;
