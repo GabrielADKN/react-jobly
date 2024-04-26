@@ -1,8 +1,18 @@
-# React + Vite
+# Jobly
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+App
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- BrowserRouter
+-- State holder
+--- Navbar
+    ~Context Holder: All jobs?~
+
+        Companies list      Props: all companies. Data from /companies
+            company cards   Props: overview about company passed from above
+            company detail  Props: company details. API to /companies/:handle
+                job cards   Props: overview of jobm passed from above
+        
+        Jobs list           Props: API call for Jobs api /jobs
+            job cards       Props: detials about one job api jobs/:id
+

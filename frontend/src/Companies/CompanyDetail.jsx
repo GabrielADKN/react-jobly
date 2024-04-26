@@ -1,49 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import JoblyApi from '../api';
+import { useParams } from "react-router-dom";
+import JoblyApi from "../api/api";
+import { useState, useEffect } from "react";
+import JobCard from "../jobs/JobCard";
 
-function CompanyDetail() {
-    const [company, setCompany] = useState(null);
-    const [jobs, setJobs] = useState([]);
-    const { handle } = useParams();
+// Page for a single company
+// Should have the company description and a list of jobs for this company
+const Company = () => {
+  const { handle } = useParams();
+  const [company, setCompany] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        async function getCompanyAndJobs() {
-            try {
-                const companyRes = await JoblyApi.getCompany(handle);
-                const jobsRes = await JoblyApi.getCompanyJobs(handle);
-                setCompany(companyRes);
-                setJobs(jobsRes);
-            } catch (err) {
-                console.error("Failed to load company or jobs", err);
-            }
-        }
+  useEffect(() => {
+    async function getCompany(handle) {
+      try {
+        let res = await JoblyApi.getCompany(handle);
+        setCompany(res);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch company", error);
+      }
+    }
 
-        getCompanyAndJobs();
-    }, [handle]);
+    setIsLoading(true);
+    getCompany(handle);
+  }, [handle]);
 
-    if (!company) return <div>Loading...</div>;
+  if (isLoading) {
+    return <div className="container mt-5">Loading...</div>;
+  }
 
-    return (
-        <div className="company-detail">
-            <h1>{company.name}</h1>
-            <p>{company.description}</p>
-            <div>
-                <h3>Jobs at {company.name}</h3>
-                {jobs.length > 0 ? (
-                    <ul>
-                        {jobs.map(job => (
-                            <li key={job.id}>
-                                {job.title} - {job.salary && `$${job.salary}`} - {job.equity && `Equity: ${job.equity}`}
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No jobs listed for this company.</p>
-                )}
+  if (!company) {
+    return <div className="container mt-5">Company not found.</div>;
+  }
+
+  return (
+    <div className="container mt-5">
+      <h1 className="mb-3">{company.name}</h1>
+      <p className="mb-3">{company.description}</p>
+      <h3 className="mt-4 mb-3">Jobs at {company.name}:</h3>
+      <div className="row">
+        {company.jobs && company.jobs.length > 0 ? (
+          company.jobs.map(({ id, title, salary, equity }) => (
+            <div key={id} className="col-md-4 mb-3">
+              <JobCard
+                key={id}
+                title={title}
+                salary={salary}
+                equity={equity}
+              />
             </div>
-        </div>
-    );
-}
+          ))
+        ) : (
+          <p className="col">No jobs listed.</p>
+        )}
+      </div>
+    </div>
+  );
+};
 
-export default CompanyDetail;
+export default Company;

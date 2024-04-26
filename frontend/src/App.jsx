@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Jobly from './Jobly'
+import { BrowserRouter } from "react-router-dom";
+import Navbar from "./routes/Navbar";
+import AppRoutes from "./routes/AppRoutes";
+
+import ContextHolder from "./common/ContextHolder";
 
 function App() {
   return (
-    <>
-      <Jobly />
-    </>
-  )
+    <ContextHolder>
+
+    </ContextHolder>
+  );
 }
 
-export default App
+export default App;
